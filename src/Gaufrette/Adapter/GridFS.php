@@ -38,12 +38,10 @@ class GridFS implements Adapter,
      */
     public function read($key)
     {
-        try {
-            $stream = $this->bucket->openDownloadStreamByName($key);
-        } catch (FileNotFoundException $e) {
+        $stream = $this->getDownloadStream($key);
+        if(!$stream) {
             return false;
         }
-
         try {
             return stream_get_contents($stream);
         } finally {
@@ -51,13 +49,13 @@ class GridFS implements Adapter,
         }
     }
 
+
     /**
      * {@inheritdoc}
      */
     public function write($key, $content)
     {
-        $stream = $this->bucket->openUploadStream($key, ['metadata' => $this->getMetadata($key)]);
-
+        $stream = $this->getUploadStream($key);
         try {
             return fwrite($stream, $content);
         } finally {
@@ -204,5 +202,29 @@ class GridFS implements Adapter,
         }
 
         return $result;
+    }
+    
+    /**
+     * @param string $key
+     * @return Resource
+     */
+     public function getDownloadStream($key)
+     {
+         try {
+             $stream = $this->bucket->openDownloadStreamByName($key);
+         } catch (FileNotFoundException $e) {
+             return false;
+         }
+         return $stream;
+    }
+    
+    /**
+     * @param string $key
+     * @return Resource
+     */
+    public function getUploadStream($key)
+    {
+        $stream = $this->bucket->openUploadStream($key, ['metadata' => $this->getMetadata($key)]);
+        return $stream;
     }
 }
