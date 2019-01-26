@@ -91,7 +91,6 @@ class GridFSTest extends FunctionalTestCase
     }
 
     /**
-     *
      * @test
      * Test to see if filesize works, does not validate accuracy of what is returned by gridfs
      */
