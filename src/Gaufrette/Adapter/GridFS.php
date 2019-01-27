@@ -219,4 +219,9 @@ class GridFS implements Adapter,
         return $size['length'];
     }
     
+    
+    public function getBucket() 
+    {
+        return $this->bucket;
+    }
 }
