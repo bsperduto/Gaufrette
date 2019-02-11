@@ -6,7 +6,7 @@ use Gaufrette\Filesystem;
 use Gaufrette\Adapter\GridFS;
 use MongoDB\Client;
 
-class InMemoryBufferTest extends FunctionalTestCase
+class GridFSTest extends FunctionalTestCase
 {
     public function setUp()
     {
