@@ -6,6 +6,7 @@ use Gaufrette\Adapter;
 use MongoDB\BSON\Regex;
 use MongoDB\GridFS\Bucket;
 use MongoDB\GridFS\Exception\FileNotFoundException;
+use Gaufrette\Stream;
 
 /**
  * Adapter for the GridFS filesystem on MongoDB database.
@@ -17,7 +18,8 @@ use MongoDB\GridFS\Exception\FileNotFoundException;
 class GridFS implements Adapter,
                         ChecksumCalculator,
                         MetadataSupporter,
-                        ListKeysAware
+                        ListKeysAware,
+                        StreamFactory
 {
     /** @var array */
     private $metadata = [];
@@ -210,4 +212,10 @@ class GridFS implements Adapter,
     {
         return $this->bucket;
     }
+    
+    public function createStream($key)
+    {
+        return new Stream\GridFS($this, $key);
+    }
+
 }
