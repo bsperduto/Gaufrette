@@ -4,24 +4,19 @@ namespace Gaufrette\Stream;
 use Gaufrette\Stream;
 use Gaufrette\StreamMode;
 
-class GridFS extends InMemoryBuffer implements Stream
+class GridFS implements Stream
 {
 
     private $gridfsstream;
-
     private $key;
-
     private $handle;
-
     private $filesystem;
-
     private $mode;
 
     public function __construct($filesystem, $key)
     {
         $this->filesystem = $filesystem;
         $this->key = $key;
-        return parent::__construct($filesystem, $key);
     }
 
     public function open(StreamMode $mode)
@@ -31,7 +26,25 @@ class GridFS extends InMemoryBuffer implements Stream
         if ($this->mode->allowsRead() && $this->mode->allowsWrite()) {
             $this->gridfsstream = false;
             // GridFS only supports reading or writing not both so revert to in memory
-            return parent::open($mode);
+            $this->handle = fopen("php://temp", $this->mode->getMode());
+            
+            if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->has($this->key)) {
+                try {
+                    $readhandle = $this->filesystem->getAdapter()
+                    ->getBucket()
+                    ->openDownloadStreamByName($this->key);
+                } catch (\Exception $e) {
+                    throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
+                }
+                stream_copy_to_stream($readhandle, $this->handle);
+                fclose($readhandle);
+            }
+            if ($this->mode->impliesPositioningCursorAtTheEnd()) {
+                fseek($this->handle, 0, SEEK_END);
+            } else {
+                fseek($this->handle, 0, SEEK_SET);
+            }
+            return true;
         }
         $this->gridfsstream = true;
         $exists = $this->filesystem->has($this->key);
@@ -97,16 +110,13 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function read($count)
     {
-        if (!$this->gridfsstream) {
-            return parent::read($count);
-        }
-        
         if (! $this->handle) {
             return false;
         }
         if (false === $this->mode->allowsRead()) {
             throw new \LogicException('The stream does not allow read.');
         }
+        
         return fread($this->handle, $count);
     }
 
@@ -116,10 +126,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function write($data)
     {
-        if (!$this->gridfsstream) {
-            return parent::write($data);
-        }
-        
         if (! $this->handle) {
             return false;
         }
@@ -135,13 +141,16 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function close()
     {
-        if (!$this->gridfsstream) {
-            return parent::close();
-        }
-        
         if (! $this->handle) {
             return false;
         }
+        
+        if (!$this->gridfsstream) {
+            //Flush to GridFS first
+            $this->flush();
+        }
+        
+        
         $closed = fclose($this->handle);
         if ($closed) {
             $this->mode = null;
@@ -157,7 +166,19 @@ class GridFS extends InMemoryBuffer implements Stream
     public function flush()
     {
         if (!$this->gridfsstream) {
-            return parent::flush();
+            if ($this->filesystem->has($this->key)) {
+                $this->filesystem->delete($this->key);
+            }
+            try {
+                $writehandle = $this->filesystem->getAdapter()
+                ->getBucket()
+                ->openUploadStream($this->key);
+                stream_copy_to_stream($this->handle, $writehandle, -1, 0);
+                fclose($writehandle);
+                return true;
+            } catch (\Exception $e) {
+                throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
+            }
         }
         
         if ($this->handle) {
@@ -172,9 +193,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        if (!$this->gridfsstream) {
-            return parent::seek($offset, $whence);
-        }
         
         if ($this->handle) {
             return 0 === fseek($this->handle, $offset, $whence);
@@ -188,9 +206,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function tell()
     {
-        if (!$this->gridfsstream) {
-            return parent::tell();
-        }
         
         if ($this->handle) {
             return ftell($this->handle);
@@ -204,9 +219,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function eof()
     {
-        if (!$this->gridfsstream) {
-            return parent::eof();
-        }
         
         if ($this->handle) {
             return feof($this->handle);
@@ -220,9 +232,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function stat()
     {
-        if (!$this->gridfsstream) {
-            return parent::stat();
-        }
         
         if ($this->handle) {
             return fstat($this->handle);
@@ -236,9 +245,6 @@ class GridFS extends InMemoryBuffer implements Stream
      */
     public function cast($castAs)
     {
-        if (!$this->gridfsstream) {
-            return parent::cast($castAs);
-        }
         
         if ($this->handle) {
             return $this->handle;
@@ -251,11 +257,7 @@ class GridFS extends InMemoryBuffer implements Stream
      * {@inheritdoc}
      */
     public function unlink()
-    {
-        if (!$this->gridfsstream) {
-            return parent::unlink();
-        }
-        
+    {        
         if ($this->mode && $this->mode->impliesExistingContentDeletion()) {
             return $this->filesystem->delete($this->key);
         }
