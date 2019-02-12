@@ -28,7 +28,7 @@ class GridFS implements Stream
             // GridFS only supports reading or writing not both so revert to in memory
             $this->handle = fopen("php://temp", $this->mode->getMode());
             
-            if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->has($this->key)) {
+            if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->exists($this->key)) {
                 try {
                     $readhandle = $this->filesystem->getAdapter()
                     ->getBucket()
@@ -47,7 +47,7 @@ class GridFS implements Stream
             return true;
         }
         $this->gridfsstream = true;
-        $exists = $this->filesystem->has($this->key);
+        $exists = $this->filesystem->exists($this->key);
         if (($exists && ! $mode->allowsExistingFileOpening()) || (! $exists && ! $mode->allowsNewFileOpening())) {
             return false;
         }
