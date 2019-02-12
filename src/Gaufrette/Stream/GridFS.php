@@ -30,8 +30,7 @@ class GridFS implements Stream
             
             if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->exists($this->key)) {
                 try {
-                    $readhandle = $this->filesystem->getAdapter()
-                    ->getBucket()
+                    $readhandle = $this->filesystem->getBucket()
                     ->openDownloadStreamByName($this->key);
                 } catch (\Exception $e) {
                     throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
@@ -54,8 +53,7 @@ class GridFS implements Stream
 
         if ($this->mode->allowsRead()) {
             try {
-                $this->handle = $this->filesystem->getAdapter()
-                    ->getBucket()
+                $this->handle = $this->filesystem->getBucket()
                     ->openDownloadStreamByName($this->key);
             } catch (\Exception $e) {
                 throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
@@ -73,8 +71,7 @@ class GridFS implements Stream
             }
 
             try {
-                $this->handle = $this->filesystem->getAdapter()
-                    ->getBucket()
+                $this->handle = $this->filesystem->getBucket()
                     ->openUploadStream($this->key);
             } catch (\Exception $e) {
                 throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
@@ -82,8 +79,7 @@ class GridFS implements Stream
 
             if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->has($this->key)) {
                 try {
-                    $readhandle = $this->filesystem->getAdapter()
-                        ->getBucket()
+                    $readhandle = $this->filesystem->getBucket()
                         ->openDownloadStreamByName($this->key);
                 } catch (\Exception $e) {
                     throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
@@ -170,8 +166,7 @@ class GridFS implements Stream
                 $this->filesystem->delete($this->key);
             }
             try {
-                $writehandle = $this->filesystem->getAdapter()
-                ->getBucket()
+                $writehandle = $this->filesystem->getBucket()
                 ->openUploadStream($this->key);
                 stream_copy_to_stream($this->handle, $writehandle, -1, 0);
                 fclose($writehandle);
