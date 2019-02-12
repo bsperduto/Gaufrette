@@ -67,7 +67,7 @@ class GridFS implements Stream
             return true;
         } else {
             if ($this->mode->impliesExistingContentDeletion()) {
-                if ($this->filesystem->has($this->key)) {
+                if ($this->filesystem->exists($this->key)) {
                     $this->filesystem->delete($this->key);
                 }
             }
@@ -166,7 +166,7 @@ class GridFS implements Stream
     public function flush()
     {
         if (!$this->gridfsstream) {
-            if ($this->filesystem->has($this->key)) {
+            if ($this->filesystem->exists($this->key)) {
                 $this->filesystem->delete($this->key);
             }
             try {
