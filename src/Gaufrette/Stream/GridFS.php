@@ -87,8 +87,13 @@ class GridFS implements Stream
     private function openTempStream()
     {
         $this->gridfsstream = false;
-        
-        $newhandle = fopen("php://temp", $this->mode->getMode());
+        if (!$this->mode->allowsRead()) {
+            //In order to copy the temp stream we must be able to read it
+            $newhandle = fopen("php://temp", $this->mode->getMode()."+");
+        }
+        else {
+            $newhandle = fopen("php://temp", $this->mode->getMode());
+        }
         if ($this->handle === null) {
             //Handle not already open
             if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->exists($this->key)) {
