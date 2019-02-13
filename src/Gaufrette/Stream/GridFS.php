@@ -206,7 +206,8 @@ class GridFS implements Stream
             try {
                 $writehandle = $this->filesystem->getBucket()
                 ->openUploadStream($this->key);
-                stream_copy_to_stream($this->handle, $writehandle, -1, 0);
+                rewind($this->handle);
+                stream_copy_to_stream($this->handle, $writehandle);
                 fclose($writehandle);
                 return true;
             } catch (\Exception $e) {
