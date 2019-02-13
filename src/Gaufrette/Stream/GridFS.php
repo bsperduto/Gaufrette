@@ -274,7 +274,9 @@ class GridFS implements Stream
         
         if ($this->handle) {
             clearstatcache();
-            return fstat($this->handle);
+            $stat = fstat($this->handle);
+            $stat['mode'] = 33204;
+            return $stat;
         }
         return false;
     }
