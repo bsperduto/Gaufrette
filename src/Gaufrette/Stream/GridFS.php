@@ -25,7 +25,7 @@ class GridFS implements Stream
 
         if ($this->mode->allowsRead() && $this->mode->allowsWrite()) {
             // GridFS only supports reading or writing not both so revert to in memory
-            $this->openTempStream();
+            return $this->openTempStream();
         }
         $this->gridfsstream = true;
         $exists = $this->filesystem->exists($this->key);
