@@ -129,6 +129,7 @@ class GridFS implements Stream
             }
         }
         $this->handle = $newhandle;
+        return true;
     }
 
 
