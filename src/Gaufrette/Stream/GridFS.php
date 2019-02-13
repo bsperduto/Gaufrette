@@ -103,9 +103,9 @@ class GridFS implements Stream
             }
             
             if ($this->mode->impliesPositioningCursorAtTheEnd()) {
-                fseek($this->handle, 0, SEEK_END);
+                fseek($newhandle, 0, SEEK_END);
             } else {
-                fseek($this->handle, 0, SEEK_SET);
+                fseek($newhandle, 0, SEEK_SET);
             }
         }
         else {
