@@ -271,7 +271,7 @@ class GridFS implements Stream
      */
     public function stat()
     {
-        if (!$this->filesystem->exists($this->key)) {
+        if (!$this->filesystem->exists($this->key) && $this->tell() == 0) {
             return false;
         }
         if ($this->handle) {
