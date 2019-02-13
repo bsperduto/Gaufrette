@@ -128,7 +128,7 @@ class GridFS implements Stream
                 fclose($this->handle);
             }
         }
-        $this->handle = $newhandle
+        $this->handle = $newhandle;
     }
 
 
