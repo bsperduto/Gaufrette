@@ -24,26 +24,8 @@ class GridFS implements Stream
         $this->mode = $mode;
 
         if ($this->mode->allowsRead() && $this->mode->allowsWrite()) {
-            $this->gridfsstream = false;
             // GridFS only supports reading or writing not both so revert to in memory
-            $this->handle = fopen("php://temp", $this->mode->getMode());
-            
-            if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->exists($this->key)) {
-                try {
-                    $readhandle = $this->filesystem->getBucket()
-                    ->openDownloadStreamByName($this->key);
-                } catch (\Exception $e) {
-                    throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
-                }
-                stream_copy_to_stream($readhandle, $this->handle);
-                fclose($readhandle);
-            }
-            if ($this->mode->impliesPositioningCursorAtTheEnd()) {
-                fseek($this->handle, 0, SEEK_END);
-            } else {
-                fseek($this->handle, 0, SEEK_SET);
-            }
-            return true;
+            $this->openTempStream();
         }
         $this->gridfsstream = true;
         $exists = $this->filesystem->exists($this->key);
@@ -99,6 +81,56 @@ class GridFS implements Stream
 
         return false;
     }
+    /**
+     * 
+     */
+    private function openTempStream()
+    {
+        $this->gridfsstream = false;
+        
+        $newhandle = fopen("php://temp", $this->mode->getMode());
+        if ($this->handle === null) {
+            //Handle not already open
+            if (! $this->mode->impliesExistingContentDeletion() && $this->filesystem->exists($this->key)) {
+                try {
+                    $readhandle = $this->filesystem->getBucket()
+                    ->openDownloadStreamByName($this->key);
+                } catch (\Exception $e) {
+                    throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
+                }
+                stream_copy_to_stream($readhandle, $newhandle);
+                fclose($readhandle);
+            }
+            
+            if ($this->mode->impliesPositioningCursorAtTheEnd()) {
+                fseek($this->handle, 0, SEEK_END);
+            } else {
+                fseek($this->handle, 0, SEEK_SET);
+            }
+        }
+        else {
+            //Handle is already open so save what we've got
+            if ($this->mode->allowsWrite()) {
+                fclose($this->handle);
+                $readhandle = $this->filesystem->getBucket()->openDownloadStreamByName($this->key);
+                stream_copy_to_stream($readhandle, $newhandle);
+                fclose($readhandle);
+                $this->filesystem->delete($this->key);
+                //GridFS write streams are always set to the end so no need to reset pointer
+            }
+            else {
+                //Read stream
+                $pointer = ftell($this->handle);
+                rewind($this->handle);
+                stream_copy_to_stream($this->handle, $newhandle);
+                //Resetting the read pointer to the correct spot
+                fseek($newhandle, $pointer);
+                fclose($this->handle);
+            }
+        }
+        $this->handle = $newhandle
+    }
+
 
     /**
      *
@@ -190,7 +222,12 @@ class GridFS implements Stream
     {
         
         if ($this->handle) {
-            return 0 === fseek($this->handle, $offset, $whence);
+            $result = fseek($this->handle, $offset, $whence);
+            if ($result !== 0 && $this->gridfsstream) {
+                $this->openTempStream();
+                $result = fseek($this->handle, $offset, $whence);
+            }
+            return 0 === $result;
         }
         return false;
     }
