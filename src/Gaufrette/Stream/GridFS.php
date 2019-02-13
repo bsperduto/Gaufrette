@@ -298,6 +298,8 @@ class GridFS implements Stream
     public function unlink()
     {        
         if ($this->mode && $this->mode->impliesExistingContentDeletion()) {
+            //Done automatically with local files but this isn't a local file
+            clearstatcache();
             return $this->filesystem->delete($this->key);
         }
         return false;
