@@ -273,6 +273,7 @@ class GridFS implements Stream
     {
         
         if ($this->handle) {
+            clearstatcache();
             return fstat($this->handle);
         }
         return false;
