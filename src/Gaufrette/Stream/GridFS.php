@@ -12,6 +12,7 @@ class GridFS implements Stream
     private $handle;
     private $filesystem;
     private $mode;
+    private $writtento;
 
     public function __construct($filesystem, $key)
     {
@@ -22,6 +23,7 @@ class GridFS implements Stream
     public function open(StreamMode $mode)
     {
         $this->mode = $mode;
+        $this->writtento = false;
 
         if ($this->mode->allowsRead() && $this->mode->allowsWrite()) {
             // GridFS only supports reading or writing not both so revert to in memory
@@ -68,6 +70,7 @@ class GridFS implements Stream
                 }
                 stream_copy_to_stream($readhandle, $this->handle);
                 fclose($readhandle);
+                $this->writtento = true;
             }
 
             if ($this->mode->impliesPositioningCursorAtTheEnd()) {
@@ -166,6 +169,7 @@ class GridFS implements Stream
         if (false === $this->mode->allowsWrite()) {
             throw new \LogicException('The stream does not allow write.');
         }
+        $this->writtento = true;
         return fwrite($this->handle, $data);
     }
 
@@ -228,7 +232,7 @@ class GridFS implements Stream
     public function seek($offset, $whence = SEEK_SET)
     {
         
-        if ($this->handle) {
+        if ($this->handle && ($this->writtento || $this->mode->allowsRead())) {
             $result = fseek($this->handle, $offset, $whence);
             if ($result !== 0 && $this->gridfsstream) {
                 $this->openTempStream();
@@ -271,9 +275,7 @@ class GridFS implements Stream
      */
     public function stat()
     {
-        if (!$this->filesystem->exists($this->key) && $this->tell() == 0) {
-            return false;
-        }
+        
         if ($this->handle) {
             clearstatcache();
             $stat = fstat($this->handle);
