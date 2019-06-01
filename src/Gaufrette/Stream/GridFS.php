@@ -129,11 +129,17 @@ class GridFS implements Stream
             else {
                 //Read stream
                 $pointer = ftell($this->handle);
-                rewind($this->handle);
-                stream_copy_to_stream($this->handle, $newhandle);
+                fclose($this->handle);
+                try {
+                    $readhandle = $this->filesystem->getBucket()
+                    ->openDownloadStreamByName($this->key);
+                } catch (\Exception $e) {
+                    throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
+                }
+                stream_copy_to_stream($readhandle, $newhandle);
+                fclose($readhandle);
                 //Resetting the read pointer to the correct spot
                 fseek($newhandle, $pointer);
-                fclose($this->handle);
             }
         }
         $this->handle = $newhandle;
