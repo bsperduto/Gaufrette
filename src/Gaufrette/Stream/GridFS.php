@@ -233,12 +233,20 @@ class GridFS implements Stream
     {
         
         if ($this->handle && ($this->writtento || $this->mode->allowsRead())) {
-            $result = fseek($this->handle, $offset, $whence);
-            if ($result !== 0 && $this->gridfsstream) {
-                $this->openTempStream();
+            try {
                 $result = fseek($this->handle, $offset, $whence);
+                if ($result !== 0 && $this->gridfsstream) {
+                    $this->openTempStream();
+                    $result = fseek($this->handle, $offset, $whence);
+                }
+                return 0 === $result;
+            } catch (\Exception $e) {
+                if($this->gridfsstream) {
+                    $this->openTempStream();
+                    return $this->seek($offset, $whence);
+                }
+                throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
             }
-            return 0 === $result;
         }
         return false;
     }
