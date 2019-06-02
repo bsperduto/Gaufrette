@@ -291,10 +291,17 @@ class GridFS implements Stream
     {
         
         if ($this->handle) {
-            clearstatcache();
             $stat = fstat($this->handle);
+            if($this->gridfsstream) {
+                if($this->mode->allowsRead()) {
+                    $stat['size'] = $this->filesystem->size($this->key);
+                }
+                else {
+                    $stat['size'] = $this->tell();
+                }
+            }
             $stat['mode'] = 33204;
-            return $stat;
+            return array_merge(array_values($stat), $stat);
         }
         return false;
     }
