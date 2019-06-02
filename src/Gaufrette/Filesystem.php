@@ -68,7 +68,6 @@ class Filesystem implements FilesystemInterface
         }
 
         if ($this->isFileInRegister($sourceKey)) {
-            $this->fileRegister[$targetKey] = $this->fileRegister[$sourceKey];
             unset($this->fileRegister[$sourceKey]);
         }
 
