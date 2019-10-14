@@ -4,7 +4,7 @@ namespace Gaufrette\Functional\FileStream;
 
 use Aws\S3\S3Client;
 use Gaufrette\Filesystem;
-use Gaufrette\Adapter\Local as LocalAdapter;
+use Gaufrette\Adapter\AwsS3;
 
 class AwsS3Test extends FunctionalTestCase
 {
