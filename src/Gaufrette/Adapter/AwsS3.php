@@ -11,7 +11,7 @@ use Gaufrette\Util;
  *
  * @author  Michael Dowling <mtdowling@gmail.com>
  */
-class AwsS3 implements Adapter, MetadataSupporter, ListKeysAware, SizeCalculator, MimeTypeProvider
+class AwsS3 implements Adapter, MetadataSupporter, ListKeysAware, SizeCalculator, MimeTypeProvider, StreamFactory
 {
     /** @var S3Client */
     protected $service;
@@ -372,4 +372,9 @@ class AwsS3 implements Adapter, MetadataSupporter, ListKeysAware, SizeCalculator
             return false;
         }
     }
+    public function createStream($key)
+    {
+        return new Stream\AwsS3($this->service, $this->bucket, $key);
+    }
+
 }
