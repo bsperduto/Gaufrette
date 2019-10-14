@@ -6,7 +6,7 @@ use Aws\S3\S3Client;
 use Gaufrette\Filesystem;
 use Gaufrette\Adapter\Local as LocalAdapter;
 
-class LocalTest extends FunctionalTestCase
+class AwsS3Test extends FunctionalTestCase
 {
     protected $directory;
 
