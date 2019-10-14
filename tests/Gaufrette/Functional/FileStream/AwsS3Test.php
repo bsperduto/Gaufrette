@@ -62,6 +62,50 @@ class AwsS3Test extends FunctionalTestCase
         $this->filesystem = new Filesystem(new AwsS3($this->client, $this->bucket, $adapterOptions));
     }
     
+    /**
+     * @test
+     */
+    public function shouldWriteFromSettedPosition()
+    {
+        $this->markTestSkipped('Unsupported.');
+    }
+    
+    /**
+     * @test
+     */
+    public function shouldSetAndGetPosition()
+    {
+        file_put_contents('gaufrette://filestream/test.txt', 'test content');
+        
+        $fileHandler = fopen('gaufrette://filestream/test.txt', 'r');
+        fseek($fileHandler, 1, SEEK_SET);
+        $this->assertEquals(1, ftell($fileHandler));
+        fseek($fileHandler, 1, SEEK_CUR);
+        $this->assertEquals(2, ftell($fileHandler));
+        fclose($fileHandler);
+        
+        $fileHandler = fopen('gaufrette://filestream/test.txt', 'r');
+        fseek($fileHandler, 1, SEEK_CUR);
+        $this->assertEquals(1, ftell($fileHandler));
+        fclose($fileHandler);
+        
+        $fileHandler = fopen('gaufrette://filestream/test.txt', 'r');
+        fseek($fileHandler, -2, SEEK_END);
+        $this->assertEquals(10, ftell($fileHandler));
+        fclose($fileHandler);
+    }
+    
+    /**
+     * @test
+     */
+    public function shouldNotSeekWhenWhenceParameterIsInvalid()
+    {
+        file_put_contents('gaufrette://filestream/test.txt', 'test content');
+        
+        $fileHandler = fopen('gaufrette://filestream/test.txt', 'r');
+        $this->assertEquals(-1, fseek($fileHandler, 1, 666));
+    }
+    
 
     public function tearDown()
     {
@@ -82,6 +126,16 @@ class AwsS3Test extends FunctionalTestCase
         }
         
         $this->client->deleteBucket(['Bucket' => $this->bucket]);
+    }
+    
+    public static function modesProvider()
+    {
+        return [
+            ['w'],
+            ['a'],
+            ['ab'],
+            ['wb'],
+        ];
     }
    
 }
