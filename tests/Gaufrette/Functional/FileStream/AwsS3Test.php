@@ -8,6 +8,9 @@ use Gaufrette\Adapter\Local as LocalAdapter;
 
 class AwsS3Test extends FunctionalTestCase
 {
+    /** @var int */
+    private static $SDK_VERSION;
+    
     protected $directory;
 
     private $client;
