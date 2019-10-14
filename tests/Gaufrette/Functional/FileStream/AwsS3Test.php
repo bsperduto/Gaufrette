@@ -51,7 +51,9 @@ class AwsS3Test extends FunctionalTestCase
         }
         
         $this->createFilesystem(['create' => true]);
-        
+        //Force bucket creation
+        $this->filesystem->write("empty.txt", "empty");
+        sleep(5);
         $this->registerLocalFilesystemInStream();
     }
 
