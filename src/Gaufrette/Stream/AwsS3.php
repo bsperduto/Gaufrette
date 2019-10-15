@@ -26,16 +26,19 @@ class AwsS3 implements Stream
      */
     private $bucket;
     private $seekable = false;
+    private $tempStream = false;
+    private $detectContentType;
 
     /**
      * @param S3Client $client
      * @param String   $bucket
      */
-    public function __construct($client, $bucket, $key)
+    public function __construct($client, $bucket, $key, $detectContentType)
     {
         $this->client = $client;
         $this->bucket = $bucket;
         $this->key = $key;
+        $this->detectContentType = $detectContentType;
     }
 
     /**
@@ -47,10 +50,16 @@ class AwsS3 implements Stream
             throw new \RuntimeException("AwsS3 SDK does not support reading and writing from the same stream");
         }
         $this->checkAndRegisterWrapper();
-        $fileHandle = $this->openStream($mode);
+        if($this->detectContentType && $mode->impliesExistingContentDeletion()) {
+            $this->fileHandle = fopen("php://temp", "w+");
+            $this->tempStream = true;
+        }
+        else {
+            $fileHandle = $this->openStream($mode);
+        }
 
         if (false === $fileHandle) {
-            throw new \RuntimeException(sprintf('File "%s" cannot be opened', $path));
+            throw new \RuntimeException(sprintf('File "%s" cannot be opened', $this->key));
         }
 
         $this->mode = $mode;
@@ -100,7 +109,20 @@ class AwsS3 implements Stream
         if (!$this->fileHandle) {
             return false;
         }
-
+        
+        if($this->tempStream) {
+            rewind($this->fileHandle);
+            $fileInfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime =  $fileInfo->buffer(fread($this->fileHandle, 1048576));
+            rewind($this->fileHandle);
+            $context = stream_context_create([
+                's3' => ['ContentType' => $mime]
+            ]);
+            $writeHandle = $this->openStream($this->mode, $context);
+            stream_copy_to_stream($this->fileHandle, $writeHandle);
+            fclose($this->fileHandle);
+            $this->fileHandle = $writeHandle;
+        }
         $closed = fclose($this->fileHandle);
 
         if ($closed) {
@@ -135,6 +157,7 @@ class AwsS3 implements Stream
                     's3' => ['seekable' => true]
                 ]);
                 $this->fileHandle = $this->openStream($this->mode, $context);
+                $this->seekable = true;
             }
             return 0 === fseek($this->fileHandle, $offset, $whence);
         }

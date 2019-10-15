@@ -375,7 +375,7 @@ class AwsS3 implements Adapter, MetadataSupporter, ListKeysAware, SizeCalculator
     }
     public function createStream($key)
     {
-        return new Stream\AwsS3($this->service, $this->bucket, $key);
+        return new Stream\AwsS3($this->service, $this->bucket, $key, $this->detectContentType);
     }
 
 }
