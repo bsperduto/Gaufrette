@@ -73,6 +73,20 @@ class AwsS3Test extends FunctionalTestCase
     /**
      * @test
      */
+    public function shouldHandlesSubDir()
+    {
+        file_put_contents('gaufrette://filestream/subdir/test.txt', 'test content');
+        
+        $this->assertTrue(is_file('gaufrette://filestream/subdir/test.txt'));
+        
+        $this->filesystem->delete('subdir/test.txt');
+        clearstatcache();
+        $this->assertFalse(is_file('gaufrette://filestream/subdir/test.txt'));
+    }
+    
+    /**
+     * @test
+     */
     public function shouldSetAndGetPosition()
     {
         file_put_contents('gaufrette://filestream/test.txt', 'test content');
