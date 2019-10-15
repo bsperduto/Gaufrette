@@ -76,7 +76,7 @@ class AwsS3Test extends FunctionalTestCase
     public function shouldHandlesSubDir()
     {
         file_put_contents('gaufrette://filestream/subdir/test.txt', 'test content');
-        
+        sleep(2);
         $this->assertTrue(is_file('gaufrette://filestream/subdir/test.txt'));
         
         $this->filesystem->delete('subdir/test.txt');
