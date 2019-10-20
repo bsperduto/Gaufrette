@@ -123,6 +123,8 @@ class AwsS3 implements Stream
             fclose($this->fileHandle);
             $this->fileHandle = $writeHandle;
         }
+        //S3 requires advance flush
+        fflush($this->fileHandle);
         $closed = fclose($this->fileHandle);
 
         if ($closed) {
