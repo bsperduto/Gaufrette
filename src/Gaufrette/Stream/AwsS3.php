@@ -51,7 +51,7 @@ class AwsS3 implements Stream
         }
         $this->checkAndRegisterWrapper();
         if($this->detectContentType && $mode->impliesExistingContentDeletion()) {
-            $this->fileHandle = fopen("php://temp", "w+");
+            $fileHandle = fopen('php://temp', 'wb+');
             $this->tempStream = true;
         }
         else {
